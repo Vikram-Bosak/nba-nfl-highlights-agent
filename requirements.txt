@@ -1,0 +1,9 @@
+yt-dlp
+python-dotenv
+requests
+openai
+Pillow
+pilmoji
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib

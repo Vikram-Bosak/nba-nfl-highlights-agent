@@ -1,0 +1,11 @@
+# NBA/NFL Highlights Agent
+.env
+workspace/
+temp/
+logs/
+__pycache__/
+*.pyc
+*.mp4
+*.wav
+*.mp3
+youtube_token.json

@@ -1,0 +1,55 @@
+name: NBA/NFL Highlights Pipeline
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Run every 3 hours for optimal NBA/NFL coverage
+    - cron: '0 */3 * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  process_video:
+    runs-on: ubuntu-latest
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      TELEGRAM_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_REPORT_CHAT_ID }}
+      FB_ACCESS_TOKEN: ${{ secrets.FB_ACCESS_TOKEN }}
+      FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+      YOUTUBE_TOKEN_JSON: ${{ secrets.YOUTUBE_TOKEN_JSON }}
+      NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y ffmpeg
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Create Temp Directory
+        run: mkdir -p temp workspace logs
+
+      - name: Run NBA/NFL Pipeline (Download → Edit → Upload)
+        run: |
+          python main_agent.py
+
+      - name: Commit History Updates
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add downloaded_history.txt || true
+          git add temp/daily_limits.json || true
+          git commit -m "Auto-update NBA/NFL pipeline history [skip ci]" || echo "No changes to commit"
+          git pull --rebase origin main || true
+          git push origin HEAD:main || echo "Push failed (no changes or auth issue)"
